@@ -1,8 +1,8 @@
 import { forwardRef, PropsWithoutRef } from "react"
 import { useField } from "react-final-form"
-import { Button, Input } from "@chakra-ui/react"
+import { Button, Input, Textarea } from "@chakra-ui/react"
 
-export interface LabeledTextFieldProps extends PropsWithoutRef<JSX.IntrinsicElements["input"]> {
+export interface LabeledTextFieldProps extends PropsWithoutRef<JSX.IntrinsicElements["textarea"]> {
   /** Field name. */
   name: string
   /** Field label. */
@@ -12,7 +12,7 @@ export interface LabeledTextFieldProps extends PropsWithoutRef<JSX.IntrinsicElem
   outerProps?: PropsWithoutRef<JSX.IntrinsicElements["div"]>
 }
 
-export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldProps>(
+export const LabeledTextAreaField = forwardRef<HTMLInputElement, LabeledTextFieldProps>(
   ({ name, label, outerProps, ...props }, ref) => {
     const {
       input,
@@ -25,10 +25,10 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
 
     return (
       <div {...outerProps}>
-        <Input
+        <Textarea
           color="black"
           bgColor="white"
-          size="md"
+          size="lg"
           {...input}
           disabled={submitting}
           {...props}
@@ -45,4 +45,4 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
   }
 )
 
-export default LabeledTextField
+export default LabeledTextAreaField

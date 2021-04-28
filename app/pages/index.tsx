@@ -1,8 +1,15 @@
 import { Suspense } from "react"
-import { Link, BlitzPage, useMutation, Routes } from "blitz"
+import { Link, BlitzPage, useMutation, Routes, useQuery, useSession, Router, dynamic } from "blitz"
 import Layout from "app/core/layouts/Layout"
 import { useCurrentUser } from "app/core/hooks/useCurrentUser"
 import logout from "app/auth/mutations/logout"
+import { Container, Center, Box, Flex, Text, Heading, Checkbox, Button } from "@chakra-ui/react"
+import React from "react"
+import { TodoForm, FORM_ERROR } from "app/todos/components/TodoForm"
+import createTodo from "app/todos/mutations/createTodo"
+import getTodo from "app/todos/queries/getTodo"
+import updateComplete from "app/todos/mutations/updateComplete"
+import EditTodoForm from "app/todos/components/EditTodoForm"
 
 /*
  * This file is just for a pleasant getting started page for your new app.
@@ -25,8 +32,6 @@ const UserInfo = () => {
           Logout
         </button>
         <div>
-          User id: <code>{currentUser.id}</code>
-          <br />
           User role: <code>{currentUser.role}</code>
         </div>
       </>
@@ -49,219 +54,139 @@ const UserInfo = () => {
   }
 }
 
-const Home: BlitzPage = () => {
+const Todo = () => {
+  const session = useSession()
+  const [todos] = useQuery(getTodo, { id: session.userId! })
+  const [updateCompletedTodo] = useMutation(updateComplete)
+
   return (
-    <div className="container">
-      <main>
-        <div className="logo">
-          <img src="/logo.png" alt="blitz.js" />
-        </div>
-        <p>
-          <strong>Congrats!</strong> Your app is ready, including user sign-up and log-in.
-        </p>
-        <div className="buttons" style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-          <Suspense fallback="Loading...">
-            <UserInfo />
-          </Suspense>
-        </div>
-        <p>
-          <strong>
-            To add a new model to your app, <br />
-            run the following in your terminal:
-          </strong>
-        </p>
-        <pre>
-          <code>blitz generate all project name:string</code>
-        </pre>
-        <div style={{ marginBottom: "1rem" }}>(And select Yes to run prisma migrate)</div>
-        <div>
-          <p>
-            Then <strong>restart the server</strong>
-          </p>
-          <pre>
-            <code>Ctrl + c</code>
-          </pre>
-          <pre>
-            <code>blitz dev</code>
-          </pre>
-          <p>
-            and go to{" "}
-            <Link href="/projects">
-              <a>/projects</a>
-            </Link>
-          </p>
-        </div>
-        <div className="buttons" style={{ marginTop: "5rem" }}>
-          <a
-            className="button"
-            href="https://blitzjs.com/docs/getting-started?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-          <a
-            className="button-outline"
-            href="https://github.com/blitz-js/blitz"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Github Repo
-          </a>
-          <a
-            className="button-outline"
-            href="https://discord.blitzjs.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Discord Community
-          </a>
-        </div>
-      </main>
+    <>
+      <Container
+        p={[0, 0]}
+        d="flex"
+        flexDirection="column"
+        justifyContent="space-around"
+        marginBottom="6px"
+        maxH="100%"
+        maxW="100%"
+      >
+        {todos.map((todo) => {
+          return (
+            <Box bg="black" d="flex" justifyContent="space-between" shadow="lg" marginBottom="6px">
+              <Checkbox
+                defaultChecked={todo.completed}
+                todoName={todo.name}
+                todoId={todo.id}
+                onChange={async () => {
+                  await updateCompletedTodo({ data: { ...todo }, id: todo.id })
+                  Router.reload()
+                }}
+                marginRight="5px"
+                isInvalid
+              >
+                Done
+              </Checkbox>
+              {todo.completed ? <Text as="del">{todo.name}</Text> : <Text>{todo.name}</Text>}
+              <EditTodoForm todo={todo} />
+              <Button colorScheme="pink" variant="solid">
+                Delete
+              </Button>
+            </Box>
+          )
+        })}
+      </Container>
+    </>
+  )
+}
 
-      <footer>
-        <a
-          href="https://blitzjs.com?utm_source=blitz-new&utm_medium=app-template&utm_campaign=blitz-new"
-          target="_blank"
-          rel="noopener noreferrer"
+const Home: BlitzPage = () => {
+  const [createTodoMutation] = useMutation(createTodo)
+  //const [todo] = useQuery(getTodo, {})
+  return (
+    <Container p={[0, 0]} maxW="100vw" h="100vh" bgGradient="linear(to-r,  #41295a, #2F0743)">
+      <Container
+        p={[0, 0]}
+        bgPosition="50% 70%"
+        bgRepeat="no-repeat"
+        bgImage="url('https://images.unsplash.com/photo-1617818393409-d228534eec01?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2055&q=80')"
+        h="25%"
+        maxW="100vw"
+      >
+        <Box bgGradient="linear(to-r, green.200, pink.500)" w="100%" h="100%" opacity="0.4"></Box>
+      </Container>
+      <Center h="70vh">
+        <Box
+          overflow="hidden"
+          top="20"
+          position="absolute"
+          bgGradient="linear-gradient(to-r, #a8ff78,#78ffd6)"
+          shadow=""
+          w="30%"
+          h="70%"
+          minW="300px"
+          boxShadow="dark-lg"
+          rounded="md"
         >
-          Powered by Blitz.js
-        </a>
-      </footer>
-
-      <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;700&display=swap");
-
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: "Libre Franklin", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-
-        * {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          box-sizing: border-box;
-        }
-        .container {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        main p {
-          font-size: 1.2rem;
-        }
-
-        p {
-          text-align: center;
-        }
-
-        footer {
-          width: 100%;
-          height: 60px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-color: #45009d;
-        }
-
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer a {
-          color: #f4f4f4;
-          text-decoration: none;
-        }
-
-        .logo {
-          margin-bottom: 2rem;
-        }
-
-        .logo img {
-          width: 300px;
-        }
-
-        .buttons {
-          display: grid;
-          grid-auto-flow: column;
-          grid-gap: 0.5rem;
-        }
-        .button {
-          font-size: 1rem;
-          background-color: #6700eb;
-          padding: 1rem 2rem;
-          color: #f4f4f4;
-          text-align: center;
-        }
-
-        .button.small {
-          padding: 0.5rem 1rem;
-        }
-
-        .button:hover {
-          background-color: #45009d;
-        }
-
-        .button-outline {
-          border: 2px solid #6700eb;
-          padding: 1rem 2rem;
-          color: #6700eb;
-          text-align: center;
-        }
-
-        .button-outline:hover {
-          border-color: #45009d;
-          color: #45009d;
-        }
-
-        pre {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          text-align: center;
-        }
-        code {
-          font-size: 0.9rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
-            Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-        }
-      `}</style>
-    </div>
+          <Flex direction="column" color="white">
+            <Box
+              boxShadow="dark-lg"
+              borderBottom="1px solid black"
+              bgPosition="50% 70%"
+              bgRepeat="no-repeat"
+              bgImage="url('https://images.unsplash.com/photo-1617818393409-d228534eec01?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2055&q=80')"
+              w="100%"
+              h="15vh"
+            >
+              <Center h="100%">
+                <Text
+                  noOfLines={[1, 2, 3]}
+                  fontSize="2rem"
+                  fontWeight="extrabold"
+                  bgClip="text"
+                  bgGradient="linear-gradient(to-r, #c0c0aa,#B86792)"
+                >
+                  TO DO LIST
+                </Text>
+              </Center>
+            </Box>
+            <Box bgGradient="linear-gradient(to-r, #c0c0aa, #1cefff)" w="100%" h="100vh">
+              <Box borderBottom="1px solid green">
+                <Suspense fallback={<h1>loading</h1>}>
+                  <Todo />
+                </Suspense>
+              </Box>
+              <Box>
+                <TodoForm
+                  name="Todo"
+                  submitText="Create Todo"
+                  // TODO use a zod schema for form validation
+                  //  - Tip: extract mutation's schema into a shared `validations.ts` file and
+                  //         then import and use it here
+                  // schema={CreateTodo}
+                  // initialValues={{ id: session.userId }}
+                  onSubmit={async (values) => {
+                    try {
+                      await createTodoMutation(values)
+                      Router.reload()
+                    } catch (error) {
+                      console.error(error)
+                      return {
+                        [FORM_ERROR]: error.toString(),
+                      }
+                    }
+                  }}
+                />
+              </Box>
+              <Box>
+                <Suspense fallback={<h1>loading...</h1>}>
+                  <UserInfo />
+                </Suspense>
+              </Box>
+            </Box>
+          </Flex>
+        </Box>
+      </Center>
+    </Container>
   )
 }
 

@@ -15,7 +15,7 @@ export interface FormProps<S extends z.ZodType<any, any>>
   initialValues?: FinalFormProps<z.infer<S>>["initialValues"]
 }
 
-export function Form<S extends z.ZodType<any, any>>({
+export function EditForm<S extends z.ZodType<any, any>>({
   children,
   submitText,
   schema,
@@ -37,7 +37,7 @@ export function Form<S extends z.ZodType<any, any>>({
       onSubmit={onSubmit}
       render={({ handleSubmit, submitting, submitError }) => (
         <form onSubmit={handleSubmit} className="form" {...props}>
-          <Box d="flex">
+          <Box>
             {/* Form fields supplied as children are rendered here */}
             {children}
 
@@ -59,4 +59,4 @@ export function Form<S extends z.ZodType<any, any>>({
   )
 }
 
-export default Form
+export default EditForm
