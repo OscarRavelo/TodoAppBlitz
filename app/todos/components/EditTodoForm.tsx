@@ -13,7 +13,7 @@ import {
 import { Router, useMutation } from "blitz"
 import React from "react"
 import updateTodo from "../mutations/updateTodo"
-import { SecondForm } from "./SecondForm"
+import { FORM_ERROR, SecondForm } from "./SecondForm"
 
 const EditTodoForm = ({ todo }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -22,7 +22,7 @@ const EditTodoForm = ({ todo }) => {
 
   return (
     <>
-      <Button ref={btnRef} colorScheme="teal" onClick={onOpen}>
+      <Button size="sm" ref={btnRef} colorScheme="teal" onClick={onOpen}>
         Edit
       </Button>
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} finalFocusRef={btnRef}>
@@ -48,11 +48,11 @@ const EditTodoForm = ({ todo }) => {
                   try {
                     console.log("values", values)
                     await updateTodoMutation(values)
-                    // Router.reload()
+                    Router.reload()
                   } catch (error) {
                     console.error(error)
                     return {
-                      // [FORM_ERROR]: error.toString(),
+                      [FORM_ERROR]: error.toString(),
                     }
                   }
                 }}
