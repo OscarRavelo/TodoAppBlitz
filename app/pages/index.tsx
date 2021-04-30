@@ -1,7 +1,8 @@
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { Link, BlitzPage, useMutation, Routes, useQuery, useSession, Router, dynamic } from "blitz"
 import Layout from "app/core/layouts/Layout"
 import { useCurrentUser } from "app/core/hooks/useCurrentUser"
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd"
 import logout from "app/auth/mutations/logout"
 import {
   Container,
@@ -28,14 +29,14 @@ import deleteTodo from "app/todos/mutations/deleteTodo"
  * This file is just for a pleasant getting started page for your new app.
  * You can delete everything in here and start from scratch if you like.
  */
-
 const UserInfo = () => {
   const currentUser = useCurrentUser()
-
   if (currentUser) {
     return (
       <>
-        <Todo id={currentUser.id} />
+        <Box h="100%" border="1px solid black">
+          <Todo id={currentUser.id} />
+        </Box>
       </>
     )
   } else {
@@ -59,53 +60,141 @@ const UserInfo = () => {
 const Todo = ({ id }) => {
   const [createTodoMutation] = useMutation(createTodo)
   const [todos] = useQuery(getTodo, { id })
+  const [arrayTodoList, setArrayTodoList] = useState(todos)
+  const [currentPosition, setCurrentPosition] = useState(["start", "progress", "completed"])
+  const [currentDestination, setCurrentDestination] = useState("")
   const [updateCompletedTodo] = useMutation(updateComplete)
   const [deleteTodoDone] = useMutation(deleteTodo)
   const [logoutMutation] = useMutation(logout)
 
+  function handleOnDragEnd(result) {
+    const items = Array.from(arrayTodoList)
+    const [reorderedItem] = items.splice(result.source.index, 1)
+    items.splice(result.destination.index, 0, reorderedItem)
+    console.log("result", result)
+    setArrayTodoList(items)
+    if (result.destination.droppableId !== result.source.droppableId) {
+      result.source.droppableId = result.destination.droppableId
+    }
+  }
+
   return (
-    <>
-      {todos.map((todo) => {
-        return (
-          <Box maxW="sm" color="white">
-            <Center width="100%" h="100%">
-              <Box bgColor="#4C5270">
-                <Grid
-                  h="150px"
-                  templateRows="repeat(2, 1fr)"
-                  templateColumns="repeat(5, 1fr)"
-                  gap={2}
-                >
-                  <GridItem colSpan={4}>
-                    {todo.completed ? (
-                      <Heading as="del">{todo.name}</Heading>
-                    ) : (
-                      <Heading>{todo.name}</Heading>
+    <DragDropContext onDragEnd={handleOnDragEnd}>
+      <Box h="100%" w="100%" border="5px solid black">
+        <Flex>
+          <Box flex="1">
+            <Droppable droppableId="completed" type="PERSON">
+              {(provided, snapshot) => (
+                <div ref={provided.innerRef} {...provided.droppableProps}>
+                  {console.log(snapshot)}
+                  <Draggable draggableId="draggable-1" index={0}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <h4>My terasdgable</h4>
+                      </div>
                     )}
-                  </GridItem>
-                  <GridItem rowSpan={2}>
-                    <EditTodoForm todo={todo} />
-                  </GridItem>
-
-                  <GridItem colSpan={4}>{todo.information}</GridItem>
-
-                  {/* <Button
-                  onClick={() => {
-                    deleteTodoDone({ id: todo.id })
-                    Router.reload()
-                  }}
-                  colorScheme="pink"
-                  variant="solid"
-                >
-                  Delete
-                </Button> */}
-                </Grid>
-              </Box>
-            </Center>
+                  </Draggable>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           </Box>
-        )
-      })}
+          <Box flex="1">
+            <Droppable droppableId="progress" type="PERSON">
+              {(provided, snapshot) => (
+                <div ref={provided.innerRef} {...provided.droppableProps}>
+                  <Draggable draggableId="draggable-2" index={1}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <h4 onDragExit={() => console.log("tssss")}>My terasdgable 2</h4>
+                      </div>
+                    )}
+                  </Draggable>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </Box>
+          <Box flex="1">
+            <Droppable droppableId="start" type="PERSON">
+              {(provided, snapshot) => (
+                <div ref={provided.innerRef} {...provided.droppableProps}>
+                  {/* {todo here} */}
+                  {arrayTodoList.map((todo, index) => {
+                    return (
+                      <Box marginBottom="1rem">
+                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              maxW="sm"
+                              color="white"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <Center width="100%" h="100%">
+                                <Box bgColor="#4C5270" borderRadius="lg">
+                                  <Grid
+                                    h="150px"
+                                    templateRows="repeat(2, 1fr)"
+                                    templateColumns="repeat(5, 1fr)"
+                                    gap={2}
+                                  >
+                                    <GridItem colSpan={4}>
+                                      {todo.completed ? (
+                                        <Heading as="del">{todo.name}</Heading>
+                                      ) : (
+                                        <Heading>{todo.name}</Heading>
+                                      )}
+                                    </GridItem>
+                                    <GridItem rowSpan={2}>
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        d="flex"
+                                        justifyContent="space-between"
+                                        flexDirection="column"
+                                      >
+                                        <EditTodoForm todo={todo} />
+                                        <Button
+                                          onClick={() => {
+                                            deleteTodoDone({ id: todo.id })
+                                            Router.reload()
+                                          }}
+                                          colorScheme="pink"
+                                          variant="solid"
+                                        >
+                                          Delete
+                                        </Button>
+                                      </Box>
+                                    </GridItem>
 
+                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                  </Grid>
+                                </Box>
+                              </Center>
+                            </Box>
+                          )}
+                        </Draggable>
+                      </Box>
+                    ) // todos array
+                  })}
+                  {/* {perfect here} */}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </Box>
+        </Flex>
+      </Box>
       <TodoForm
         name="Todo"
         submitText="Create Todo"
@@ -126,11 +215,13 @@ const Todo = ({ id }) => {
           }
         }}
       />
-    </>
+    </DragDropContext>
   )
 }
 
 const Home: BlitzPage = () => {
+  const [todoList, updateTodoList] = useState({})
+
   //const [todo] = useQuery(getTodo, {})
 
   return (
@@ -160,7 +251,7 @@ const Home: BlitzPage = () => {
           </Center>
         </Box>
       </Container>
-      <Center h="70%">
+      <Center>
         <Box
           border="2px solid black"
           top="20"
@@ -184,9 +275,11 @@ const Home: BlitzPage = () => {
               </Text>
             </Center>
           </Box>
-          <Suspense fallback={<h1>loading...</h1>}>
-            <UserInfo />
-          </Suspense>
+          <Box maxH="100%" h="80%">
+            <Suspense fallback={<h1>Loading...</h1>}>
+              <UserInfo />
+            </Suspense>
+          </Box>
         </Box>
       </Center>
     </Container>
