@@ -58,9 +58,33 @@ const UserInfo = () => {
 }
 
 const Todo = ({ id }) => {
-  const [createTodoMutation] = useMutation(createTodo)
   const [todos] = useQuery(getTodo, { id })
+
+  //states
   const [arrayTodoList, setArrayTodoList] = useState(todos)
+  const [arrayColumns, setArrayColumns] = useState({
+    tasks: [...todos],
+    columns: {
+      start: {
+        id: "start",
+        title: "start",
+        taskIds: [...todos],
+      },
+      progress: {
+        id: "progress",
+        title: "pogress",
+        taskIds: [],
+      },
+      completed: {
+        id: "completed",
+        title: "completed",
+        taskIds: [],
+      },
+    },
+    columnOrder: ["start", "progress", "completed"],
+  })
+
+  const [createTodoMutation] = useMutation(createTodo)
   const [currentPosition, setCurrentPosition] = useState(["start", "progress", "completed"])
   const [currentDestination, setCurrentDestination] = useState("")
   const [updateCompletedTodo] = useMutation(updateComplete)
@@ -68,15 +92,60 @@ const Todo = ({ id }) => {
   const [logoutMutation] = useMutation(logout)
 
   function handleOnDragEnd(result) {
-    const items = Array.from(arrayTodoList)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+    if (!result.destination) {
+      return
+    }
     console.log("result", result)
-    setArrayTodoList(items)
-    if (result.destination.droppableId !== result.source.droppableId) {
-      result.source.droppableId = result.destination.droppableId
+    const start = arrayColumns.columns[result.source.droppableId]
+    const finish = arrayColumns.columns[result.destination.droppableId]
+    const items = Array.from(arrayTodoList)
+    const itemsState = Array.from(arrayColumns.columns[result.destination.droppableId].taskIds)
+
+    if (start === finish) {
+      const [reorderedItem] = items.splice(result.source.index, 1)
+      items.splice(result.destination.index, 0, reorderedItem)
+      setArrayTodoList(items)
+      const newColumn = {
+        ...start,
+        taskIds: items,
+      }
+
+      setArrayColumns({
+        ...arrayColumns,
+        columns: { ...arrayColumns.columns, [newColumn.id]: newColumn },
+      })
+    } else {
+      const startTaskIds = Array.from(start.taskIds)
+      startTaskIds.splice(result.source.index, 1)
+      const newStart = {
+        ...start,
+        taskIds: startTaskIds,
+      }
+
+      const finishTaskIds = Array.from(finish.taskIds)
+      finishTaskIds.splice(
+        result.destination.index,
+        0,
+        ...items.filter((a) => a.name === result.draggableId)
+      )
+      const newFinish = {
+        ...finish,
+        taskIds: finishTaskIds,
+      }
+
+      const newState = {
+        ...arrayColumns,
+        columns: {
+          ...arrayColumns.columns,
+          [newStart.id]: newStart,
+          [newFinish.id]: newFinish,
+        },
+      }
+      setArrayColumns(newState)
     }
   }
+
+  //before render
 
   return (
     <DragDropContext onDragEnd={handleOnDragEnd}>
@@ -86,18 +155,66 @@ const Todo = ({ id }) => {
             <Droppable droppableId="completed" type="PERSON">
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
-                  {console.log(snapshot)}
-                  <Draggable draggableId="draggable-1" index={0}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <h4>My terasdgable</h4>
-                      </div>
-                    )}
-                  </Draggable>
+                  {arrayColumns.columns.completed.taskIds.map((todo, index) => {
+                    return (
+                      <Box marginBottom="1rem">
+                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              maxW="sm"
+                              color="white"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              {console.log("snapshot", snapshot)}
+                              <Center width="100%" h="100%">
+                                <Box bgColor="#4C5270" borderRadius="lg">
+                                  <Grid
+                                    h="150px"
+                                    templateRows="repeat(2, 1fr)"
+                                    templateColumns="repeat(5, 1fr)"
+                                    gap={2}
+                                  >
+                                    <GridItem colSpan={4}>
+                                      {todo.completed ? (
+                                        <Heading as="del">{todo.name}</Heading>
+                                      ) : (
+                                        <Heading>{todo.name}</Heading>
+                                      )}
+                                    </GridItem>
+                                    <GridItem rowSpan={2}>
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        d="flex"
+                                        justifyContent="space-between"
+                                        flexDirection="column"
+                                      >
+                                        <EditTodoForm todo={todo} />
+                                        <Button
+                                          onClick={() => {
+                                            deleteTodoDone({ id: todo.id })
+                                            Router.reload()
+                                          }}
+                                          colorScheme="pink"
+                                          variant="solid"
+                                        >
+                                          Delete
+                                        </Button>
+                                      </Box>
+                                    </GridItem>
+
+                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                  </Grid>
+                                </Box>
+                              </Center>
+                            </Box>
+                          )}
+                        </Draggable>
+                      </Box>
+                    ) // todos array
+                  })}
                   {provided.placeholder}
                 </div>
               )}
@@ -107,17 +224,65 @@ const Todo = ({ id }) => {
             <Droppable droppableId="progress" type="PERSON">
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
-                  <Draggable draggableId="draggable-2" index={1}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <h4 onDragExit={() => console.log("tssss")}>My terasdgable 2</h4>
-                      </div>
-                    )}
-                  </Draggable>
+                  {arrayColumns.columns.progress.taskIds.map((todo, index) => {
+                    return (
+                      <Box marginBottom="1rem">
+                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              maxW="sm"
+                              color="white"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <Center width="100%" h="100%">
+                                <Box bgColor="#4C5270" borderRadius="lg">
+                                  <Grid
+                                    h="150px"
+                                    templateRows="repeat(2, 1fr)"
+                                    templateColumns="repeat(5, 1fr)"
+                                    gap={2}
+                                  >
+                                    <GridItem colSpan={4}>
+                                      {todo.completed ? (
+                                        <Heading as="del">{todo.name}</Heading>
+                                      ) : (
+                                        <Heading>{todo.name}</Heading>
+                                      )}
+                                    </GridItem>
+                                    <GridItem rowSpan={2}>
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        d="flex"
+                                        justifyContent="space-between"
+                                        flexDirection="column"
+                                      >
+                                        <EditTodoForm todo={todo} />
+                                        <Button
+                                          onClick={() => {
+                                            deleteTodoDone({ id: todo.id })
+                                            Router.reload()
+                                          }}
+                                          colorScheme="pink"
+                                          variant="solid"
+                                        >
+                                          Delete
+                                        </Button>
+                                      </Box>
+                                    </GridItem>
+
+                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                  </Grid>
+                                </Box>
+                              </Center>
+                            </Box>
+                          )}
+                        </Draggable>
+                      </Box>
+                    ) // todos array
+                  })}
                   {provided.placeholder}
                 </div>
               )}
@@ -128,7 +293,7 @@ const Todo = ({ id }) => {
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
                   {/* {todo here} */}
-                  {arrayTodoList.map((todo, index) => {
+                  {arrayColumns.columns.start.taskIds.map((todo, index) => {
                     return (
                       <Box marginBottom="1rem">
                         <Draggable draggableId={todo.name} key={todo.id} index={index}>
@@ -206,6 +371,7 @@ const Todo = ({ id }) => {
         onSubmit={async (values) => {
           try {
             await createTodoMutation(values)
+
             Router.reload()
           } catch (error) {
             console.error(error)
