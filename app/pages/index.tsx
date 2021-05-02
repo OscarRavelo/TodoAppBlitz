@@ -24,6 +24,8 @@ import getTodo from "app/todos/queries/getTodo"
 import updateComplete from "app/todos/mutations/updateComplete"
 import EditTodoForm from "app/todos/components/EditTodoForm"
 import deleteTodo from "app/todos/mutations/deleteTodo"
+import Cookies from "universal-cookie"
+import previewEmail from "preview-email"
 
 /*
  * This file is just for a pleasant getting started page for your new app.
@@ -58,31 +60,110 @@ const UserInfo = () => {
 }
 
 const Todo = ({ id }) => {
-  const [todos] = useQuery(getTodo, { id })
-
   //states
+  const [todos] = useQuery(getTodo, { id })
+  const cookie = new Cookies()
   const [arrayTodoList, setArrayTodoList] = useState(todos)
-  const [arrayColumns, setArrayColumns] = useState({
-    tasks: [...todos],
-    columns: {
-      start: {
-        id: "start",
-        title: "start",
-        taskIds: [...todos],
-      },
-      progress: {
-        id: "progress",
-        title: "pogress",
-        taskIds: [],
-      },
-      completed: {
-        id: "completed",
-        title: "completed",
-        taskIds: [],
-      },
-    },
-    columnOrder: ["start", "progress", "completed"],
-  })
+  const [arrayColumns, setArrayColumns] = useState({ ...cookie.get("state") })
+
+  function handleDelete(item) {
+    const startTaskIds = [...arrayColumns.columns.start.taskIds]
+    const progressTaskIds = [...arrayColumns.columns.progress.taskIds]
+    const completedTaskIds = [...arrayColumns.columns.completed.taskIds]
+
+    //checking start
+    if (startTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      const filteredArray = startTaskIds.filter((list) => list.id !== item.id)
+      cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            start: {
+              ...arrayColumns.columns.start,
+              taskIds: [...filteredArray],
+            },
+          },
+        })
+      )
+    } else if (progressTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      const filteredArray = progressTaskIds.filter((list) => list.id !== item.id)
+      cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            progress: {
+              ...arrayColumns.columns.progress,
+              taskIds: [...filteredArray],
+            },
+          },
+        })
+      )
+    } else if (completedTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      const filteredArray = completedTaskIds.filter((list) => list.id !== item.id)
+      cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            completed: {
+              ...arrayColumns.columns.completed,
+              taskIds: [...filteredArray],
+            },
+          },
+        })
+      )
+    }
+
+    //checking progress
+
+    //checking completed
+  }
+
+  //cookies
+  //cookies
+  function setCookies() {
+    if (!cookie.get("state")) {
+      console.log("heyyyyyy")
+      return cookie.set(
+        "state",
+        JSON.stringify({
+          tasks: [...todos],
+          columns: {
+            start: {
+              id: "start",
+              title: "start",
+              taskIds: [...todos],
+            },
+            progress: {
+              id: "progress",
+              title: "pogress",
+              taskIds: [],
+            },
+            completed: {
+              id: "completed",
+              title: "completed",
+              taskIds: [],
+            },
+          },
+          columnOrder: ["start", "progress", "completed"],
+        }),
+        { path: "/" }
+      )
+    } else {
+      cookie.addChangeListener((test) => {
+        console.log("test.value.json()", JSON.parse(test.value))
+        setArrayColumns({ ...JSON.parse(test.value) })
+      })
+    }
+  }
+  setCookies()
+
+  function handleRepetitive() {}
 
   const [createTodoMutation] = useMutation(createTodo)
   const [currentPosition, setCurrentPosition] = useState(["start", "progress", "completed"])
@@ -95,34 +176,39 @@ const Todo = ({ id }) => {
     if (!result.destination) {
       return
     }
-    console.log("result", result)
     const start = arrayColumns.columns[result.source.droppableId]
     const finish = arrayColumns.columns[result.destination.droppableId]
     const items = Array.from(arrayTodoList)
+    const itemToChange = items.filter((a) => a.name === result.draggableId)
     const itemsState = Array.from(arrayColumns.columns[result.destination.droppableId].taskIds)
 
     if (start === finish) {
-      const [reorderedItem] = items.splice(result.source.index, 1)
-      items.splice(result.destination.index, 0, reorderedItem)
-      setArrayTodoList(items)
+      const [reorderedItem] = start.taskIds.splice(result.source.index, 1)
+      start.taskIds.splice(result.destination.index, 0, reorderedItem)
       const newColumn = {
         ...start,
-        taskIds: items,
+        taskIds: start.taskIds,
       }
 
-      setArrayColumns({
-        ...arrayColumns,
-        columns: { ...arrayColumns.columns, [newColumn.id]: newColumn },
-      })
-    } else {
-      const startTaskIds = Array.from(start.taskIds)
-      startTaskIds.splice(result.source.index, 1)
-      const newStart = {
-        ...start,
-        taskIds: startTaskIds,
-      }
+      return cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: { ...arrayColumns.columns, [newColumn.id]: newColumn },
+        })
+      )
+    }
+    const startTaskIds = Array.from(start.taskIds)
+    startTaskIds.splice(result.source.index, 1)
+    const newStart = {
+      ...start,
+      taskIds: startTaskIds,
+    }
 
+    if (!finish.taskIds.some((item) => item.id === itemToChange[0].id)) {
+      console.log("tessssss")
       const finishTaskIds = Array.from(finish.taskIds)
+
       finishTaskIds.splice(
         result.destination.index,
         0,
@@ -141,7 +227,10 @@ const Todo = ({ id }) => {
           [newFinish.id]: newFinish,
         },
       }
-      setArrayColumns(newState)
+
+      return cookie.set("state", JSON.stringify(newState))
+    } else {
+      console.log("bug comming!")
     }
   }
 
@@ -149,15 +238,24 @@ const Todo = ({ id }) => {
 
   return (
     <DragDropContext onDragEnd={handleOnDragEnd}>
-      <Box h="100%" w="100%" border="5px solid black">
-        <Flex>
-          <Box flex="1">
+      <Box h="100%">
+        <Flex h="100%">
+          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
+            <Center>
+              <Heading marginBottom=".5rem">Completed</Heading>
+            </Center>
             <Droppable droppableId="completed" type="PERSON">
               {(provided, snapshot) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
+                  }}
+                >
                   {arrayColumns.columns.completed.taskIds.map((todo, index) => {
                     return (
-                      <Box marginBottom="1rem">
+                      <Box marginBottom="1rem" key={todo.id}>
                         <Draggable draggableId={todo.name} key={todo.id} index={index}>
                           {(provided, snapshot) => (
                             <Box
@@ -167,9 +265,8 @@ const Todo = ({ id }) => {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              {console.log("snapshot", snapshot)}
                               <Center width="100%" h="100%">
-                                <Box bgColor="#4C5270" borderRadius="lg">
+                                <Box bgColor="#36EEE0" borderRadius="lg">
                                   <Grid
                                     h="150px"
                                     templateRows="repeat(2, 1fr)"
@@ -178,9 +275,13 @@ const Todo = ({ id }) => {
                                   >
                                     <GridItem colSpan={4}>
                                       {todo.completed ? (
-                                        <Heading as="del">{todo.name}</Heading>
+                                        <Center>
+                                          <Heading as="del">{todo.name}</Heading>
+                                        </Center>
                                       ) : (
-                                        <Heading>{todo.name}</Heading>
+                                        <Center>
+                                          <Heading>{todo.name}</Heading>
+                                        </Center>
                                       )}
                                     </GridItem>
                                     <GridItem rowSpan={2}>
@@ -191,11 +292,18 @@ const Todo = ({ id }) => {
                                         justifyContent="space-between"
                                         flexDirection="column"
                                       >
-                                        <EditTodoForm todo={todo} />
+                                        <EditTodoForm
+                                          arrayColumns={arrayColumns}
+                                          cookie={cookie}
+                                          todo={todo}
+                                        />
                                         <Button
-                                          onClick={() => {
-                                            deleteTodoDone({ id: todo.id })
-                                            Router.reload()
+                                          onClick={async () => {
+                                            const deletedTodo = await deleteTodoDone({
+                                              id: todo.id,
+                                            })
+                                            //Router.reload()
+                                            handleDelete(deletedTodo)
                                           }}
                                           colorScheme="pink"
                                           variant="solid"
@@ -205,7 +313,9 @@ const Todo = ({ id }) => {
                                       </Box>
                                     </GridItem>
 
-                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                    <GridItem colSpan={4}>
+                                      <Center>{todo.information} </Center>
+                                    </GridItem>
                                   </Grid>
                                 </Box>
                               </Center>
@@ -215,18 +325,26 @@ const Todo = ({ id }) => {
                       </Box>
                     ) // todos array
                   })}
-                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
           </Box>
-          <Box flex="1">
+          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
+            <Center>
+              <Heading marginBottom=".5rem">Progress</Heading>
+            </Center>
             <Droppable droppableId="progress" type="PERSON">
               {(provided, snapshot) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
+                  }}
+                >
                   {arrayColumns.columns.progress.taskIds.map((todo, index) => {
                     return (
-                      <Box marginBottom="1rem">
+                      <Box marginBottom="1rem" key={todo.id}>
                         <Draggable draggableId={todo.name} key={todo.id} index={index}>
                           {(provided, snapshot) => (
                             <Box
@@ -237,7 +355,7 @@ const Todo = ({ id }) => {
                               {...provided.dragHandleProps}
                             >
                               <Center width="100%" h="100%">
-                                <Box bgColor="#4C5270" borderRadius="lg">
+                                <Box bgColor="#BCECE0" borderRadius="lg">
                                   <Grid
                                     h="150px"
                                     templateRows="repeat(2, 1fr)"
@@ -246,9 +364,13 @@ const Todo = ({ id }) => {
                                   >
                                     <GridItem colSpan={4}>
                                       {todo.completed ? (
-                                        <Heading as="del">{todo.name}</Heading>
+                                        <Center>
+                                          <Heading as="del">{todo.name}</Heading>
+                                        </Center>
                                       ) : (
-                                        <Heading>{todo.name}</Heading>
+                                        <Center>
+                                          <Heading>{todo.name}</Heading>
+                                        </Center>
                                       )}
                                     </GridItem>
                                     <GridItem rowSpan={2}>
@@ -259,11 +381,18 @@ const Todo = ({ id }) => {
                                         justifyContent="space-between"
                                         flexDirection="column"
                                       >
-                                        <EditTodoForm todo={todo} />
+                                        <EditTodoForm
+                                          arrayColumns={arrayColumns}
+                                          cookie={cookie}
+                                          todo={todo}
+                                        />
                                         <Button
-                                          onClick={() => {
-                                            deleteTodoDone({ id: todo.id })
-                                            Router.reload()
+                                          onClick={async () => {
+                                            const deletedTodo = await deleteTodoDone({
+                                              id: todo.id,
+                                            })
+                                            //Router.reload()
+                                            handleDelete(deletedTodo)
                                           }}
                                           colorScheme="pink"
                                           variant="solid"
@@ -273,7 +402,9 @@ const Todo = ({ id }) => {
                                       </Box>
                                     </GridItem>
 
-                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                    <GridItem colSpan={4}>
+                                      <Center>{todo.information} </Center>
+                                    </GridItem>
                                   </Grid>
                                 </Box>
                               </Center>
@@ -283,19 +414,27 @@ const Todo = ({ id }) => {
                       </Box>
                     ) // todos array
                   })}
-                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
           </Box>
-          <Box flex="1">
+          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
+            <Center>
+              <Heading marginBottom=".5rem">Start</Heading>
+            </Center>
             <Droppable droppableId="start" type="PERSON">
               {(provided, snapshot) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
+                  }}
+                >
                   {/* {todo here} */}
                   {arrayColumns.columns.start.taskIds.map((todo, index) => {
                     return (
-                      <Box marginBottom="1rem">
+                      <Box marginBottom="1rem" key={todo.id}>
                         <Draggable draggableId={todo.name} key={todo.id} index={index}>
                           {(provided, snapshot) => (
                             <Box
@@ -306,7 +445,7 @@ const Todo = ({ id }) => {
                               {...provided.dragHandleProps}
                             >
                               <Center width="100%" h="100%">
-                                <Box bgColor="#4C5270" borderRadius="lg">
+                                <Box bgColor="#F652A0" borderRadius="lg">
                                   <Grid
                                     h="150px"
                                     templateRows="repeat(2, 1fr)"
@@ -315,9 +454,13 @@ const Todo = ({ id }) => {
                                   >
                                     <GridItem colSpan={4}>
                                       {todo.completed ? (
-                                        <Heading as="del">{todo.name}</Heading>
+                                        <Center>
+                                          <Heading as="del">{todo.name}</Heading>
+                                        </Center>
                                       ) : (
-                                        <Heading>{todo.name}</Heading>
+                                        <Center>
+                                          <Heading>{todo.name}</Heading>
+                                        </Center>
                                       )}
                                     </GridItem>
                                     <GridItem rowSpan={2}>
@@ -328,11 +471,19 @@ const Todo = ({ id }) => {
                                         justifyContent="space-between"
                                         flexDirection="column"
                                       >
-                                        <EditTodoForm todo={todo} />
+                                        <EditTodoForm
+                                          arrayColumns={arrayColumns}
+                                          cookie={cookie}
+                                          todo={todo}
+                                        />
+                                        {/* correct deleteBotom */}
                                         <Button
-                                          onClick={() => {
-                                            deleteTodoDone({ id: todo.id })
-                                            Router.reload()
+                                          onClick={async () => {
+                                            const deletedTodo = await deleteTodoDone({
+                                              id: todo.id,
+                                            })
+                                            //Router.reload()
+                                            handleDelete(deletedTodo)
                                           }}
                                           colorScheme="pink"
                                           variant="solid"
@@ -342,7 +493,9 @@ const Todo = ({ id }) => {
                                       </Box>
                                     </GridItem>
 
-                                    <GridItem colSpan={4}>{todo.information}</GridItem>
+                                    <GridItem colSpan={4}>
+                                      <Center>{todo.information} </Center>
+                                    </GridItem>
                                   </Grid>
                                 </Box>
                               </Center>
@@ -353,7 +506,6 @@ const Todo = ({ id }) => {
                     ) // todos array
                   })}
                   {/* {perfect here} */}
-                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
@@ -370,7 +522,20 @@ const Todo = ({ id }) => {
         // initialValues={{ id: session.userId }}
         onSubmit={async (values) => {
           try {
-            await createTodoMutation(values)
+            const newTodo = await createTodoMutation(values)
+            cookie.set(
+              "state",
+              JSON.stringify({
+                ...arrayColumns,
+                columns: {
+                  ...arrayColumns.columns,
+                  start: {
+                    ...arrayColumns.columns.start,
+                    taskIds: [...arrayColumns.columns.start.taskIds, newTodo],
+                  },
+                },
+              })
+            )
 
             Router.reload()
           } catch (error) {
@@ -391,16 +556,13 @@ const Home: BlitzPage = () => {
   //const [todo] = useQuery(getTodo, {})
 
   return (
-    <Container p={[0, 0]} maxW="100vw" h="100vh" bgColor="#BCECE0">
-      <Container
-        p={[0, 0]}
-        bgPosition="50% 70%"
-        bgColor="white"
-        bgRepeat="no-repeat"
-        // bgImage="url('https://images.unsplash.com/photo-1617818393409-d228534eec01?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2055&q=80')"
-        h="30%"
-        maxW="100vw"
-      >
+    <Container
+      p={[0, 0]}
+      maxW="100vw"
+      h="100vh"
+      bgGradient="linear-gradient(to bottom, white,  #BCECE0)"
+    >
+      <Container p={[0, 0]} h="25.6%" maxW="100vw" bgColor="white">
         <Box d="flex" justifyContent="flex-end" paddingEnd="1rem">
           <button
             className="button small"
@@ -413,7 +575,7 @@ const Home: BlitzPage = () => {
         </Box>
         <Box w="20%" h="100%">
           <Center h="90%">
-            <Avatar size="2xl" name="Segun Adebayo" src="https://bit.ly/sage-adebayo" />
+            <Avatar size="2xl" name="Segun Adebayo" src="https://robohash.org/2/?set=set4" />
           </Center>
         </Box>
       </Container>
@@ -428,7 +590,7 @@ const Home: BlitzPage = () => {
           minW="300px"
           rounded="md"
         >
-          <Box bgPosition="50% 70%" bgRepeat="no-repeat" w="100%" h="20%">
+          <Box w="100%" h="20%" bgColor="white" zIndex="2" position="relative">
             <Center h="100%">
               <Text
                 noOfLines={[1, 2, 3]}
@@ -441,10 +603,32 @@ const Home: BlitzPage = () => {
               </Text>
             </Center>
           </Box>
-          <Box maxH="100%" h="80%">
-            <Suspense fallback={<h1>Loading...</h1>}>
-              <UserInfo />
-            </Suspense>
+          <Box maxW="100%" h="80%">
+            <img
+              style={{
+                opacity: "0.5",
+                position: "absolute",
+                top: "0",
+                right: "0",
+                width: "100%",
+                height: "100%",
+              }}
+              src="https://media.discordapp.net/attachments/461329312943964160/838373738529554473/taustalogo.jpg?"
+              alt="empty"
+            />
+            <div
+              style={{
+                zIndex: 2,
+                opacity: "1",
+                position: "relative",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <Suspense fallback={<h1>Loading...</h1>}>
+                <UserInfo />
+              </Suspense>
+            </div>
           </Box>
         </Box>
       </Center>

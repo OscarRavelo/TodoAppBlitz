@@ -15,7 +15,62 @@ import React from "react"
 import updateTodo from "../mutations/updateTodo"
 import { FORM_ERROR, SecondForm } from "./SecondForm"
 
-const EditTodoForm = ({ todo }) => {
+const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
+  function handleEdit(item) {
+    const startTaskIds = [...arrayColumns.columns.start.taskIds]
+    const progressTaskIds = [...arrayColumns.columns.progress.taskIds]
+    const completedTaskIds = [...arrayColumns.columns.completed.taskIds]
+    if (startTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log("handlestartTask if working")
+      const filteredArray = startTaskIds.filter((list) => list.id !== item.id)
+      return cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            start: {
+              ...arrayColumns.columns.start,
+              taskIds: [...filteredArray, item],
+            },
+          },
+        })
+      )
+    } else if (progressTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log("handleprogressTask if working")
+      const filteredArray = progressTaskIds.filter((list) => list.id !== item.id)
+      return cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            progress: {
+              ...arrayColumns.columns.progress,
+              taskIds: [...filteredArray, item],
+            },
+          },
+        })
+      )
+    } else if (completedTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log("handlecompletedTask if working")
+      const filteredArray = completedTaskIds.filter((list) => list.id !== item.id)
+      return cookie.set(
+        "state",
+        JSON.stringify({
+          ...arrayColumns,
+          columns: {
+            ...arrayColumns.columns,
+            completed: {
+              ...arrayColumns.columns.completed,
+              taskIds: [...filteredArray, item],
+            },
+          },
+        })
+      )
+    }
+  }
+
   const { isOpen, onOpen, onClose } = useDisclosure()
   const btnRef = React.useRef()
   const [updateTodoMutation] = useMutation(updateTodo)
@@ -46,8 +101,9 @@ const EditTodoForm = ({ todo }) => {
                 initialValues={{ id: todo.id, name: todo.name, information: todo.information }}
                 onSubmit={async (values) => {
                   try {
-                    console.log("values", values)
-                    await updateTodoMutation(values)
+                    const updatedTodo = await updateTodoMutation(values)
+                    console.log("before handle edit")
+                    handleEdit(updatedTodo)
                     Router.reload()
                   } catch (error) {
                     console.error(error)

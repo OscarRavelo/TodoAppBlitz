@@ -10,7 +10,7 @@ const DeleteTodo = z
 
 export default resolver.pipe(resolver.zod(DeleteTodo), resolver.authorize(), async ({ id }) => {
   // TODO: in multi-tenant app, you must add validation to ensure correct tenant
-  const todo = await db.todo.deleteMany({ where: { id } })
+  const todo = await db.todo.delete({ where: { id } })
 
   return todo
 })
