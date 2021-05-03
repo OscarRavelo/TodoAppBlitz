@@ -6,6 +6,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd"
 import logout from "app/auth/mutations/logout"
 import {
   Container,
+  Icon,
   Center,
   Box,
   Flex,
@@ -26,6 +27,7 @@ import EditTodoForm from "app/todos/components/EditTodoForm"
 import deleteTodo from "app/todos/mutations/deleteTodo"
 import Cookies from "universal-cookie"
 import previewEmail from "preview-email"
+import { DeleteIcon, EditIcon } from "@chakra-ui/icons"
 
 /*
  * This file is just for a pleasant getting started page for your new app.
@@ -36,7 +38,7 @@ const UserInfo = () => {
   if (currentUser) {
     return (
       <>
-        <Box h="100%" border="1px solid black">
+        <Box h="100%">
           <Todo id={currentUser.id} />
         </Box>
       </>
@@ -128,7 +130,6 @@ const Todo = ({ id }) => {
   //cookies
   function setCookies() {
     if (!cookie.get("state")) {
-      console.log("heyyyyyy")
       return cookie.set(
         "state",
         JSON.stringify({
@@ -156,14 +157,12 @@ const Todo = ({ id }) => {
       )
     } else {
       cookie.addChangeListener((test) => {
-        console.log("test.value.json()", JSON.parse(test.value))
+        //console.log("test.value.json()", JSON.parse(test.value))
         setArrayColumns({ ...JSON.parse(test.value) })
       })
     }
   }
   setCookies()
-
-  function handleRepetitive() {}
 
   const [createTodoMutation] = useMutation(createTodo)
   const [currentPosition, setCurrentPosition] = useState(["start", "progress", "completed"])
@@ -178,9 +177,6 @@ const Todo = ({ id }) => {
     }
     const start = arrayColumns.columns[result.source.droppableId]
     const finish = arrayColumns.columns[result.destination.droppableId]
-    const items = Array.from(arrayTodoList)
-    const itemToChange = items.filter((a) => a.name === result.draggableId)
-    const itemsState = Array.from(arrayColumns.columns[result.destination.droppableId].taskIds)
 
     if (start === finish) {
       const [reorderedItem] = start.taskIds.splice(result.source.index, 1)
@@ -199,21 +195,21 @@ const Todo = ({ id }) => {
       )
     }
     const startTaskIds = Array.from(start.taskIds)
-    startTaskIds.splice(result.source.index, 1)
+    const movedItem = startTaskIds.splice(result.source.index, 1)
     const newStart = {
       ...start,
       taskIds: startTaskIds,
     }
 
-    if (!finish.taskIds.some((item) => item.id === itemToChange[0].id)) {
-      console.log("tessssss")
+    if (!finish.taskIds.some((item) => item.id === parseInt(result.draggableId))) {
+      console.log(
+        "tessssss",
+        !finish.taskIds.some((item) => item.id === parseInt(result.draggableId))
+      )
+      console.log("finish taskids", finish.taskIds)
       const finishTaskIds = Array.from(finish.taskIds)
 
-      finishTaskIds.splice(
-        result.destination.index,
-        0,
-        ...items.filter((a) => a.name === result.draggableId)
-      )
+      finishTaskIds.splice(result.destination.index, 0, ...movedItem)
       const newFinish = {
         ...finish,
         taskIds: finishTaskIds,
@@ -238,189 +234,20 @@ const Todo = ({ id }) => {
 
   return (
     <DragDropContext onDragEnd={handleOnDragEnd}>
-      <Box h="100%">
-        <Flex h="100%">
-          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
+      <Box h="100%" w="100%">
+        <Flex h="100%" w="100%">
+          <Box
+            flex="1"
+            borderRight="2px solid rgba(188, 236, 224, .5)"
+            padding="1rem"
+            overflow="hidden"
+          >
             <Center>
-              <Heading marginBottom=".5rem">Completed</Heading>
-            </Center>
-            <Droppable droppableId="completed" type="PERSON">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  style={{
-                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
-                  }}
-                >
-                  {arrayColumns.columns.completed.taskIds.map((todo, index) => {
-                    return (
-                      <Box marginBottom="1rem" key={todo.id}>
-                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
-                          {(provided, snapshot) => (
-                            <Box
-                              maxW="sm"
-                              color="white"
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <Center width="100%" h="100%">
-                                <Box bgColor="#36EEE0" borderRadius="lg">
-                                  <Grid
-                                    h="150px"
-                                    templateRows="repeat(2, 1fr)"
-                                    templateColumns="repeat(5, 1fr)"
-                                    gap={2}
-                                  >
-                                    <GridItem colSpan={4}>
-                                      {todo.completed ? (
-                                        <Center>
-                                          <Heading as="del">{todo.name}</Heading>
-                                        </Center>
-                                      ) : (
-                                        <Center>
-                                          <Heading>{todo.name}</Heading>
-                                        </Center>
-                                      )}
-                                    </GridItem>
-                                    <GridItem rowSpan={2}>
-                                      <Box
-                                        w="100%"
-                                        h="100%"
-                                        d="flex"
-                                        justifyContent="space-between"
-                                        flexDirection="column"
-                                      >
-                                        <EditTodoForm
-                                          arrayColumns={arrayColumns}
-                                          cookie={cookie}
-                                          todo={todo}
-                                        />
-                                        <Button
-                                          onClick={async () => {
-                                            const deletedTodo = await deleteTodoDone({
-                                              id: todo.id,
-                                            })
-                                            //Router.reload()
-                                            handleDelete(deletedTodo)
-                                          }}
-                                          colorScheme="pink"
-                                          variant="solid"
-                                        >
-                                          Delete
-                                        </Button>
-                                      </Box>
-                                    </GridItem>
-
-                                    <GridItem colSpan={4}>
-                                      <Center>{todo.information} </Center>
-                                    </GridItem>
-                                  </Grid>
-                                </Box>
-                              </Center>
-                            </Box>
-                          )}
-                        </Draggable>
-                      </Box>
-                    ) // todos array
-                  })}
-                </div>
-              )}
-            </Droppable>
-          </Box>
-          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
-            <Center>
-              <Heading marginBottom=".5rem">Progress</Heading>
-            </Center>
-            <Droppable droppableId="progress" type="PERSON">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  style={{
-                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
-                  }}
-                >
-                  {arrayColumns.columns.progress.taskIds.map((todo, index) => {
-                    return (
-                      <Box marginBottom="1rem" key={todo.id}>
-                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
-                          {(provided, snapshot) => (
-                            <Box
-                              maxW="sm"
-                              color="white"
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <Center width="100%" h="100%">
-                                <Box bgColor="#BCECE0" borderRadius="lg">
-                                  <Grid
-                                    h="150px"
-                                    templateRows="repeat(2, 1fr)"
-                                    templateColumns="repeat(5, 1fr)"
-                                    gap={2}
-                                  >
-                                    <GridItem colSpan={4}>
-                                      {todo.completed ? (
-                                        <Center>
-                                          <Heading as="del">{todo.name}</Heading>
-                                        </Center>
-                                      ) : (
-                                        <Center>
-                                          <Heading>{todo.name}</Heading>
-                                        </Center>
-                                      )}
-                                    </GridItem>
-                                    <GridItem rowSpan={2}>
-                                      <Box
-                                        w="100%"
-                                        h="100%"
-                                        d="flex"
-                                        justifyContent="space-between"
-                                        flexDirection="column"
-                                      >
-                                        <EditTodoForm
-                                          arrayColumns={arrayColumns}
-                                          cookie={cookie}
-                                          todo={todo}
-                                        />
-                                        <Button
-                                          onClick={async () => {
-                                            const deletedTodo = await deleteTodoDone({
-                                              id: todo.id,
-                                            })
-                                            //Router.reload()
-                                            handleDelete(deletedTodo)
-                                          }}
-                                          colorScheme="pink"
-                                          variant="solid"
-                                        >
-                                          Delete
-                                        </Button>
-                                      </Box>
-                                    </GridItem>
-
-                                    <GridItem colSpan={4}>
-                                      <Center>{todo.information} </Center>
-                                    </GridItem>
-                                  </Grid>
-                                </Box>
-                              </Center>
-                            </Box>
-                          )}
-                        </Draggable>
-                      </Box>
-                    ) // todos array
-                  })}
-                </div>
-              )}
-            </Droppable>
-          </Box>
-          <Box flex="1" borderRight="2px solid rgba(188, 236, 224, .5)" padding="1rem">
-            <Center>
-              <Heading marginBottom=".5rem">Start</Heading>
+              <Box marginBottom=".5rem">
+                <Heading letterSpacing="4px" fontFamily="'Gochi Hand', cursive" color="#4C5270">
+                  START
+                </Heading>
+              </Box>
             </Center>
             <Droppable droppableId="start" type="PERSON">
               {(provided, snapshot) => (
@@ -428,42 +255,56 @@ const Todo = ({ id }) => {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   style={{
-                    backgroundColor: snapshot.isDraggingOver ? "rgba(188, 236, 224, .5)" : "white",
+                    height: "100%",
+                    backgroundColor: snapshot.isDraggingOver
+                      ? "rgba(54, 238, 224, 0.5)"
+                      : "rgba(188, 236, 224, 0)",
                   }}
                 >
-                  {/* {todo here} */}
                   {arrayColumns.columns.start.taskIds.map((todo, index) => {
                     return (
                       <Box marginBottom="1rem" key={todo.id}>
-                        <Draggable draggableId={todo.name} key={todo.id} index={index}>
+                        <Draggable draggableId={`id: ${todo.id}`} key={todo.id} drag index={index}>
                           {(provided, snapshot) => (
                             <Box
-                              maxW="sm"
                               color="white"
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
                               <Center width="100%" h="100%">
-                                <Box bgColor="#F652A0" borderRadius="lg">
+                                <Box minH="100%" minW="100%" bgColor="#36EEE0" borderRadius="lg">
                                   <Grid
-                                    h="150px"
-                                    templateRows="repeat(2, 1fr)"
-                                    templateColumns="repeat(5, 1fr)"
+                                    height="150px"
+                                    templateRows="repeat(3, 1fr)"
+                                    templateColumns="repeat(5,minmax(41px, 1fr))"
                                     gap={2}
                                   >
                                     <GridItem colSpan={4}>
                                       {todo.completed ? (
-                                        <Center>
-                                          <Heading as="del">{todo.name}</Heading>
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                            as="del"
+                                          >
+                                            {todo.name}
+                                          </Heading>
                                         </Center>
                                       ) : (
-                                        <Center>
-                                          <Heading>{todo.name}</Heading>
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                          >
+                                            {todo.name}
+                                          </Heading>
                                         </Center>
                                       )}
                                     </GridItem>
-                                    <GridItem rowSpan={2}>
+                                    <GridItem rowSpan={3}>
                                       <Box
                                         w="100%"
                                         h="100%"
@@ -476,25 +317,35 @@ const Todo = ({ id }) => {
                                           cookie={cookie}
                                           todo={todo}
                                         />
-                                        {/* correct deleteBotom */}
-                                        <Button
-                                          onClick={async () => {
-                                            const deletedTodo = await deleteTodoDone({
-                                              id: todo.id,
-                                            })
-                                            //Router.reload()
-                                            handleDelete(deletedTodo)
-                                          }}
-                                          colorScheme="pink"
-                                          variant="solid"
+                                        <Box
+                                          _hover={{ cursor: "pointer" }}
+                                          d="flex"
+                                          justifyContent="flex-end"
+                                          paddingBottom="7px"
+                                          paddingRight="6px"
                                         >
-                                          Delete
-                                        </Button>
+                                          <DeleteIcon
+                                            w={5}
+                                            h={5}
+                                            o
+                                            onClick={async () => {
+                                              const deletedTodo = await deleteTodoDone({
+                                                id: todo.id,
+                                              })
+                                              //Router.reload()
+                                              handleDelete(deletedTodo)
+                                            }}
+                                          />
+                                        </Box>
                                       </Box>
                                     </GridItem>
 
-                                    <GridItem colSpan={4}>
-                                      <Center>{todo.information} </Center>
+                                    <GridItem rowSpan={3} colSpan={4}>
+                                      <Center p="2px">
+                                        <Text isTruncated noOfLines={[1, 2, 3]} textAlign="center">
+                                          {todo.information}
+                                        </Text>
+                                      </Center>
                                     </GridItem>
                                   </Grid>
                                 </Box>
@@ -505,7 +356,264 @@ const Todo = ({ id }) => {
                       </Box>
                     ) // todos array
                   })}
-                  {/* {perfect here} */}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </Box>
+          <Box
+            flex="1"
+            borderRight="2px solid rgba(188, 236, 224, .5)"
+            padding="1rem"
+            overflow="hidden"
+          >
+            <Center>
+              <Heading
+                letterSpacing="4px"
+                fontFamily="'Gochi Hand', cursive"
+                color="#4C5270"
+                marginBottom=".5rem"
+              >
+                PROGRESS
+              </Heading>
+            </Center>
+            <Droppable droppableId="progress" type="PERSON">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    height: "100%",
+                    backgroundColor: snapshot.isDraggingOver
+                      ? "rgba(188, 236, 224, .5)"
+                      : "rgba(188, 236, 224, 0)",
+                  }}
+                >
+                  {arrayColumns.columns.progress.taskIds.map((todo, index) => {
+                    return (
+                      <Box marginBottom="1rem" key={todo.id}>
+                        <Draggable draggableId={`id: ${todo.id}`} key={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              color="#4C5270"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <Center width="100%" h="100%">
+                                <Box minH="100%" minW="100%" bgColor="#BCECE0" borderRadius="lg">
+                                  <Grid
+                                    height="150px"
+                                    templateRows="repeat(3, 1fr)"
+                                    templateColumns="repeat(5,minmax(41px, 1fr))"
+                                    gap={2}
+                                  >
+                                    <GridItem colSpan={4}>
+                                      {todo.completed ? (
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                            as="del"
+                                          >
+                                            {todo.name}
+                                          </Heading>
+                                        </Center>
+                                      ) : (
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                          >
+                                            {todo.name}
+                                          </Heading>
+                                        </Center>
+                                      )}
+                                    </GridItem>
+                                    <GridItem rowSpan={3}>
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        d="flex"
+                                        justifyContent="space-between"
+                                        flexDirection="column"
+                                      >
+                                        <EditTodoForm
+                                          arrayColumns={arrayColumns}
+                                          cookie={cookie}
+                                          todo={todo}
+                                        />
+                                        <Box
+                                          _hover={{ cursor: "pointer" }}
+                                          d="flex"
+                                          justifyContent="flex-end"
+                                          paddingBottom="7px"
+                                          paddingRight="6px"
+                                        >
+                                          <DeleteIcon
+                                            w={5}
+                                            h={5}
+                                            o
+                                            onClick={async () => {
+                                              const deletedTodo = await deleteTodoDone({
+                                                id: todo.id,
+                                              })
+                                              //Router.reload()
+                                              handleDelete(deletedTodo)
+                                            }}
+                                          />
+                                        </Box>
+                                      </Box>
+                                    </GridItem>
+
+                                    <GridItem rowSpan={3} colSpan={4}>
+                                      <Center p="2px">
+                                        <Text isTruncated noOfLines={[1, 2, 3]} textAlign="center">
+                                          {todo.information}
+                                        </Text>
+                                      </Center>
+                                    </GridItem>
+                                  </Grid>
+                                </Box>
+                              </Center>
+                            </Box>
+                          )}
+                        </Draggable>
+                      </Box>
+                    ) // todos array
+                  })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </Box>
+          <Box
+            flex="1"
+            borderRight="2px solid rgba(188, 236, 224, .5)"
+            padding="1rem"
+            overflow="hidden"
+          >
+            <Center>
+              <Heading
+                letterSpacing="4px"
+                fontFamily="'Gochi Hand', cursive"
+                color="#4C5270"
+                marginBottom=".5rem"
+              >
+                COMPLETED
+              </Heading>
+            </Center>
+            <Droppable droppableId="completed" type="PERSON">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    height: "100%",
+                    backgroundColor: snapshot.isDraggingOver
+                      ? "rgba(246, 82, 160, .5)"
+                      : "rgba(188, 236, 224, 0)",
+                  }}
+                >
+                  {/* {todo here} */}
+                  {arrayColumns.columns.completed.taskIds.map((todo, index) => {
+                    return (
+                      <Box marginBottom="1rem" key={todo.id}>
+                        <Draggable draggableId={`id: ${todo.id}`} key={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              color="white"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <Center width="100%" h="100%">
+                                <Box minH="100%" minW="100%" bgColor="#F652A0" borderRadius="lg">
+                                  <Grid
+                                    height="150px"
+                                    templateRows="repeat(3, 1fr)"
+                                    templateColumns="repeat(5,minmax(41px, 1fr))"
+                                    gap={2}
+                                  >
+                                    <GridItem colSpan={4}>
+                                      {todo.completed ? (
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                            as="del"
+                                          >
+                                            {todo.name}
+                                          </Heading>
+                                        </Center>
+                                      ) : (
+                                        <Center h="100%">
+                                          <Heading
+                                            fontSize="1.3rem"
+                                            letterSpacing="4px"
+                                            fontFamily="'Gochi Hand', cursive"
+                                          >
+                                            {todo.name}
+                                          </Heading>
+                                        </Center>
+                                      )}
+                                    </GridItem>
+                                    <GridItem rowSpan={3}>
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        d="flex"
+                                        justifyContent="space-between"
+                                        flexDirection="column"
+                                      >
+                                        <EditTodoForm
+                                          arrayColumns={arrayColumns}
+                                          cookie={cookie}
+                                          todo={todo}
+                                        />
+                                        <Box
+                                          _hover={{ cursor: "pointer" }}
+                                          d="flex"
+                                          justifyContent="flex-end"
+                                          paddingBottom="7px"
+                                          paddingRight="6px"
+                                        >
+                                          <DeleteIcon
+                                            w={5}
+                                            h={5}
+                                            o
+                                            onClick={async () => {
+                                              const deletedTodo = await deleteTodoDone({
+                                                id: todo.id,
+                                              })
+                                              //Router.reload()
+                                              handleDelete(deletedTodo)
+                                            }}
+                                          />
+                                        </Box>
+                                      </Box>
+                                    </GridItem>
+
+                                    <GridItem rowSpan={3} colSpan={4}>
+                                      <Center p="2px">
+                                        <Text isTruncated noOfLines={[1, 2, 3]} textAlign="center">
+                                          {todo.information}
+                                        </Text>
+                                      </Center>
+                                    </GridItem>
+                                  </Grid>
+                                </Box>
+                              </Center>
+                            </Box>
+                          )}
+                        </Draggable>
+                      </Box>
+                    )
+                  })}
+                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
@@ -537,7 +645,7 @@ const Todo = ({ id }) => {
               })
             )
 
-            Router.reload()
+            // Router.reload()
           } catch (error) {
             console.error(error)
             return {
@@ -556,64 +664,55 @@ const Home: BlitzPage = () => {
   //const [todo] = useQuery(getTodo, {})
 
   return (
-    <Container
-      p={[0, 0]}
-      maxW="100vw"
-      h="100vh"
-      bgGradient="linear-gradient(to bottom, white,  #BCECE0)"
-    >
-      <Container p={[0, 0]} h="25.6%" maxW="100vw" bgColor="white">
-        <Box d="flex" justifyContent="flex-end" paddingEnd="1rem">
-          <button
-            className="button small"
-            onClick={async () => {
-              await logoutMutation()
-            }}
-          >
-            Logout
-          </button>
-        </Box>
-        <Box w="20%" h="100%">
-          <Center h="90%">
-            <Avatar size="2xl" name="Segun Adebayo" src="https://robohash.org/2/?set=set4" />
-          </Center>
-        </Box>
-      </Container>
-      <Center>
-        <Box
-          border="2px solid black"
-          top="20"
-          position="absolute"
-          bgColor="white"
-          w="60%"
-          h="80%"
-          minW="300px"
-          rounded="md"
-        >
-          <Box w="100%" h="20%" bgColor="white" zIndex="2" position="relative">
-            <Center h="100%">
-              <Text
-                noOfLines={[1, 2, 3]}
-                fontSize="2rem"
-                fontWeight="extrabold"
-                bgClip="text"
-                bgGradient="linear-gradient(to-r, #c0c0aa,#B86792)"
-              >
-                TO DO LIST
-              </Text>
+    <Container p={[0, 0]} maxW="100vw" h="100vh">
+      <img
+        style={{
+          position: "absolute",
+          top: "0",
+          right: "0",
+          width: "100%",
+          height: "100%",
+        }}
+        src="https://media.discordapp.net/attachments/461329312943964160/838853029137612800/taustalogo_mint.jpg"
+        alt="empty"
+      />
+      <div
+        style={{
+          zIndex: 2,
+          opacity: "1",
+          position: "relative",
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <Container p={[0, 0]} h="25.6%" maxW="100vw" bgColor="#36EEE0" shadow="lg">
+          <Box d="flex" justifyContent="flex-end" paddingEnd="1rem">
+            <button
+              className="button small"
+              onClick={async () => {
+                await logoutMutation()
+              }}
+            >
+              Logout
+            </button>
+          </Box>
+          <Box w="20%" h="100%">
+            <Center h="90%">
+              <Avatar size="2xl" name="Segun Adebayo" src="https://robohash.org/2/?set=set4" />
             </Center>
           </Box>
-          <Box maxW="100%" h="80%">
+        </Container>
+        <Center>
+          <Box top="20" position="absolute" w="60%" h="80%" minW="300px" rounded="md" shadow="lg">
             <img
               style={{
-                opacity: "0.5",
                 position: "absolute",
                 top: "0",
                 right: "0",
                 width: "100%",
                 height: "100%",
               }}
-              src="https://media.discordapp.net/attachments/461329312943964160/838373738529554473/taustalogo.jpg?"
+              src="https://media.discordapp.net/attachments/461329312943964160/838853770620174396/vector-notepad-2111645_1280.png"
               alt="empty"
             />
             <div
@@ -625,13 +724,36 @@ const Home: BlitzPage = () => {
                 height: "100%",
               }}
             >
-              <Suspense fallback={<h1>Loading...</h1>}>
-                <UserInfo />
-              </Suspense>
+              <Box
+                w="100%"
+                h="20%"
+                zIndex="2"
+                position="relative"
+                borderBottom="2px solid rgba(188, 236, 224, .5)"
+              >
+                <Center h="100%">
+                  <Text
+                    letterSpacing="4px"
+                    fontFamily="'Gochi Hand', cursive"
+                    fontSize="4.5rem"
+                    fontWeight="extrabold"
+                    color="#4C5270"
+                    h="5.5rem"
+                    borderBottom="10px solid #4C5270"
+                  >
+                    TO DO LIST
+                  </Text>
+                </Center>
+              </Box>
+              <Box maxW="100%" h="80%">
+                <Suspense fallback={<h1>Loading...</h1>}>
+                  <UserInfo />
+                </Suspense>
+              </Box>
             </div>
           </Box>
-        </Box>
-      </Center>
+        </Center>
+      </div>
     </Container>
   )
 }

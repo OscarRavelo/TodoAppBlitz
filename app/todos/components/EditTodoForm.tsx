@@ -1,3 +1,4 @@
+import { EditIcon } from "@chakra-ui/icons"
 import {
   Button,
   Drawer,
@@ -21,8 +22,8 @@ const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
     const progressTaskIds = [...arrayColumns.columns.progress.taskIds]
     const completedTaskIds = [...arrayColumns.columns.completed.taskIds]
     if (startTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
-      console.log("handlestartTask if working")
       const filteredArray = startTaskIds.filter((list) => list.id !== item.id)
+      console.log("taskIds:", [...filteredArray, item])
       return cookie.set(
         "state",
         JSON.stringify({
@@ -37,6 +38,10 @@ const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
         })
       )
     } else if (progressTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log(
+        "if in progress",
+        progressTaskIds.find((predicate) => predicate.id === item.id)
+      )
       console.log("handleprogressTask if working")
       const filteredArray = progressTaskIds.filter((list) => list.id !== item.id)
       return cookie.set(
@@ -53,6 +58,10 @@ const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
         })
       )
     } else if (completedTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log(
+        "if in completed",
+        progressTaskIds.find((predicate) => predicate.id === item.id)
+      )
       console.log("handlecompletedTask if working")
       const filteredArray = completedTaskIds.filter((list) => list.id !== item.id)
       return cookie.set(
@@ -77,9 +86,16 @@ const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
 
   return (
     <>
-      <Button size="sm" ref={btnRef} colorScheme="teal" onClick={onOpen}>
-        Edit
-      </Button>
+      <Box
+        _hover={{ cursor: "pointer" }}
+        d="flex"
+        justifyContent="flex-end"
+        paddingTop="5px"
+        paddingRight="5px"
+      >
+        <EditIcon ref={btnRef} w={5} h={5} onClick={onOpen} />
+      </Box>
+
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} finalFocusRef={btnRef}>
         <DrawerOverlay>
           <DrawerContent>
@@ -104,7 +120,7 @@ const EditTodoForm = ({ todo, arrayColumns, cookie }) => {
                     const updatedTodo = await updateTodoMutation(values)
                     console.log("before handle edit")
                     handleEdit(updatedTodo)
-                    Router.reload()
+                    //Router.reload()
                   } catch (error) {
                     console.error(error)
                     return {
