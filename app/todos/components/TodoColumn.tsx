@@ -53,9 +53,14 @@ const TodoColumn = ({
             }}
           >
             {arrayColumns.columns[columnName].taskIds.map((todo, index) => {
-              console.log("todo", arrayColumns.columns[columnName])
+              const random =
+                Math.floor(Math.random() * (10 - 1)) + 1 >= 5
+                  ? `rotate(${Math.floor(Math.random() * (6 - 1)) + 2}deg)`
+                  : `rotate(-${Math.floor(Math.random() * (6 - 1)) + 2}deg)`
+              console.log(random)
               return (
                 <CardComponent
+                  random={random}
                   cardColor={cardColor}
                   letterColor={cardLetter}
                   arrayColumns={arrayColumns}

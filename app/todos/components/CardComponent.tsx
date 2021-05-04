@@ -7,6 +7,7 @@ import { useMutation } from "blitz"
 import deleteTodo from "../mutations/deleteTodo"
 
 const CardComponent = ({
+  random,
   todo,
   cookie,
   arrayColumns,
@@ -18,7 +19,7 @@ const CardComponent = ({
   const [deleteTodoDone] = useMutation(deleteTodo)
 
   return (
-    <Box marginBottom="1rem" key={todo.id} shadow="lg">
+    <Box marginBottom="1rem" key={todo.id} shadow="lg" paddingTop="25px">
       <Draggable draggableId={`id: ${todo.id}`} key={todo.id} index={index}>
         {(provided, snapshot) => (
           <Box
@@ -28,7 +29,14 @@ const CardComponent = ({
             {...provided.dragHandleProps}
           >
             <Center width="100%" h="100%">
-              <Box minH="100%" minW="100%" bgColor={cardColor} borderRadius="lg">
+              <Box
+                minH="100%"
+                shadow="lg"
+                minW="90%"
+                maxW="90%"
+                bgColor={cardColor}
+                transform={random}
+              >
                 <Grid
                   height="150px"
                   templateRows="repeat(3, 1fr)"

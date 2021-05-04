@@ -44,6 +44,7 @@ const UserInfo = () => {
 
 const Todo = ({ id }) => {
   //states
+
   const [todos] = useQuery(getTodo, { id })
   const cookie = new Cookies()
   const [arrayColumns, setArrayColumns] = useState({ ...cookie.get("state") })
