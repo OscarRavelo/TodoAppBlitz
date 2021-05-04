@@ -8,7 +8,7 @@ type LayoutProps = {
 
 const Layout = ({ title, children }: LayoutProps) => {
   return (
-    <div style={{ fontFamily: "Lato" }}>
+    <div style={{ fontFamily: "Lato", scrollbarColor: "none" }}>
       <Head>
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link
