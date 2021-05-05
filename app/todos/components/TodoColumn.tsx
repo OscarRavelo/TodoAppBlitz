@@ -17,6 +17,7 @@ const TodoColumn = ({
       <Center>
         <Box marginBottom=".5rem">
           <Heading
+            fontSize="2em"
             letterSpacing="4px"
             fontFamily="'Gochi Hand', cursive"
             color="#4C5270"
@@ -29,8 +30,13 @@ const TodoColumn = ({
       <Droppable droppableId={columnName} type="PERSON">
         {(provided, snapshot) => (
           <Box
+            maxH="60%"
+            minH="100%"
+            d="flex"
+            flexDirection={{ base: "row", lg: "column" }}
             overflow="hidden"
             overflowY="scroll"
+            overflowX="scroll"
             css={{
               "&::-webkit-scrollbar": {
                 width: "0px",
@@ -57,7 +63,6 @@ const TodoColumn = ({
                 Math.floor(Math.random() * (10 - 1)) + 1 >= 5
                   ? `rotate(${Math.floor(Math.random() * (6 - 1)) + 2}deg)`
                   : `rotate(-${Math.floor(Math.random() * (6 - 1)) + 2}deg)`
-              console.log(random)
               return (
                 <CardComponent
                   random={random}

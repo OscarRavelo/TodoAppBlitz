@@ -5,6 +5,7 @@ import * as z from "zod"
 const CreateTodo = z
   .object({
     name: z.string(),
+    information: z.string().optional().nullable(),
   })
   .nonstrict()
 
@@ -14,7 +15,9 @@ export default resolver.pipe(
   async (input, ctx: Ctx) => {
     // TODO: in multi-tenant app, you must add validation to ensure correct tenant
     const userId = ctx.session.userId!
-    const todo = await db.todo.create({ data: { name: input.name, userId: userId } })
+    const todo = await db.todo.create({
+      data: { name: input.name, userId: userId, information: input.information },
+    })
 
     return todo
   }

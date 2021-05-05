@@ -19,21 +19,18 @@ import createTodo from "../mutations/createTodo"
 import { FORM_ERROR, TodoForm } from "./TodoForm"
 
 const CardBottom = ({ arrayColumns, cookie }) => {
-  const [logoutMutation] = useMutation(logout)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [createTodoMutation] = useMutation(createTodo)
   return (
     <Flex
-      w="100%"
       h="100%"
+      position={{ base: "relative" }}
+      top={{ base: "-3" }}
       paddingRight="1rem"
-      justifyContent="space-between"
+      justifyContent="flex-end"
       alignItems="flex-end"
     >
-      <Button bg="#F652A0" onClick={async () => logoutMutation()}>
-        Log Out
-      </Button>
-      <Circle size="40px" bg="#36EEE0" onClick={onOpen}>
+      <Circle size={{ base: "35px", lg: "40px" }} bg="#36EEE0" onClick={onOpen}>
         <AddIcon />
       </Circle>
 
@@ -52,6 +49,7 @@ const CardBottom = ({ arrayColumns, cookie }) => {
             // schema={CreateTodo}
             // initialValues={{ id: session.userId }}
             onSubmit={async (values) => {
+              console.log("values", values)
               try {
                 const newTodo = await createTodoMutation(values)
                 cookie.set(

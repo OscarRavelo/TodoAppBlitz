@@ -19,7 +19,7 @@ const CardComponent = ({
   const [deleteTodoDone] = useMutation(deleteTodo)
 
   return (
-    <Box marginBottom="1rem" key={todo.id} shadow="lg" paddingTop="25px">
+    <Box marginBottom="1rem" key={todo.id} shadow="lg" paddingTop={{ base: "10px", lg: "25px" }}>
       <Draggable draggableId={`id: ${todo.id}`} key={todo.id} index={index}>
         {(provided, snapshot) => (
           <Box
@@ -30,25 +30,27 @@ const CardComponent = ({
           >
             <Center width="100%" h="100%">
               <Box
-                minH="100%"
                 shadow="lg"
-                minW="90%"
-                maxW="90%"
+                minW={{ base: "95%", lg: "90%" }}
+                maxW={{ base: "95%", lg: "90%" }}
                 bgColor={cardColor}
                 transform={random}
               >
                 <Grid
-                  height="150px"
+                  height={{ base: "80px", lg: "150px" }}
                   templateRows="repeat(3, 1fr)"
-                  templateColumns="repeat(5,minmax(41px, 1fr))"
+                  templateColumns={{
+                    base: "repeat(4, 30px)",
+                    lg: "repeat(5,minmax(21px, 1fr))",
+                  }}
                   gap={2}
                 >
-                  <GridItem colSpan={4}>
+                  <GridItem colSpan={{ base: 3, lg: 4 }}>
                     {todo.completed ? (
                       <Center w="100%" h="100%">
                         <Heading
-                          fontSize="1.3rem"
                           letterSpacing="4px"
+                          fontSize="1rem"
                           fontFamily="'Gochi Hand', cursive"
                           as="del"
                         >
@@ -56,11 +58,12 @@ const CardComponent = ({
                         </Heading>
                       </Center>
                     ) : (
-                      <Center w="100%" h="100%">
+                      <Center paddingTop="15px" w="100%" h="100%">
                         <Heading
+                          isTruncated
                           paddingTop="1rem"
+                          fontSize={{ base: "15px", lg: "15px" }}
                           textAlign="center"
-                          fontSize="1.3rem"
                           letterSpacing="4px"
                           fontFamily="'Gochi Hand', cursive"
                         >
@@ -101,9 +104,9 @@ const CardComponent = ({
                     </Box>
                   </GridItem>
 
-                  <GridItem rowSpan={3} colSpan={4}>
+                  <GridItem rowSpan={{ base: 1, lg: 3 }} colSpan={{ base: 3, lg: 4 }}>
                     <Center w="100%" paddingLeft="2rem">
-                      <Text isTruncated noOfLines={[1, 2, 3]} textAlign="center">
+                      <Text isTruncated noOfLines={1} textAlign="center">
                         {todo.information}
                       </Text>
                     </Center>
