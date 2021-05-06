@@ -12,7 +12,6 @@ import {
   ModalOverlay,
   useDisclosure,
 } from "@chakra-ui/react"
-import logout from "app/auth/mutations/logout"
 import { useMutation } from "blitz"
 import React from "react"
 import createTodo from "../mutations/createTodo"

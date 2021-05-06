@@ -19,7 +19,13 @@ const CardComponent = ({
   const [deleteTodoDone] = useMutation(deleteTodo)
 
   return (
-    <Box marginBottom="1rem" key={todo.id} shadow="lg" paddingTop={{ base: "10px", lg: "25px" }}>
+    <Box
+      marginBottom="1rem"
+      key={todo.id}
+      marginRight="10px"
+      shadow="lg"
+      paddingTop={{ base: "10px", lg: "25px" }}
+    >
       <Draggable draggableId={`id: ${todo.id}`} key={todo.id} index={index}>
         {(provided, snapshot) => (
           <Box
@@ -31,14 +37,14 @@ const CardComponent = ({
             <Center width="100%" h="100%">
               <Box
                 shadow="lg"
-                minW={{ base: "95%", lg: "90%" }}
-                maxW={{ base: "95%", lg: "90%" }}
+                minW={{ base: "100%", lg: "90%" }}
+                maxW={{ base: "100%", lg: "90%" }}
                 bgColor={cardColor}
                 transform={random}
               >
                 <Grid
-                  height={{ base: "80px", lg: "150px" }}
-                  templateRows="repeat(3, 1fr)"
+                  height={{ base: "70px", lg: "150px" }}
+                  templateRows={{ base: "repeat(3, 15px)", lg: "repeat(3, 1fr)" }}
                   templateColumns={{
                     base: "repeat(4, 30px)",
                     lg: "repeat(5,minmax(21px, 1fr))",
@@ -60,9 +66,8 @@ const CardComponent = ({
                     ) : (
                       <Center paddingTop="15px" w="100%" h="100%">
                         <Heading
-                          isTruncated
                           paddingTop="1rem"
-                          fontSize={{ base: "15px", lg: "15px" }}
+                          fontSize={{ base: "15px", lg: "20px" }}
                           textAlign="center"
                           letterSpacing="4px"
                           fontFamily="'Gochi Hand', cursive"
@@ -106,7 +111,12 @@ const CardComponent = ({
 
                   <GridItem rowSpan={{ base: 1, lg: 3 }} colSpan={{ base: 3, lg: 4 }}>
                     <Center w="100%" paddingLeft="2rem">
-                      <Text isTruncated noOfLines={1} textAlign="center">
+                      <Text
+                        isTruncated
+                        noOfLines={1}
+                        fontSize={{ base: "0", lg: "1rem" }}
+                        textAlign="center"
+                      >
                         {todo.information}
                       </Text>
                     </Center>

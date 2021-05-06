@@ -4,6 +4,7 @@ import { Droppable } from "react-beautiful-dnd"
 import CardComponent from "./CardComponent"
 
 const TodoColumn = ({
+  columnHeader,
   cookie,
   arrayColumns,
   handleDelete,
@@ -23,7 +24,7 @@ const TodoColumn = ({
             color="#4C5270"
             position="sticky"
           >
-            {columnName}
+            {columnHeader}
           </Heading>
         </Box>
       </Center>

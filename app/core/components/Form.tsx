@@ -1,7 +1,7 @@
-import { ReactNode, PropsWithoutRef } from "react"
+import React, { ReactNode, PropsWithoutRef } from "react"
 import { Form as FinalForm, FormProps as FinalFormProps } from "react-final-form"
 import * as z from "zod"
-import { Button, Box } from "@chakra-ui/react"
+import { Button, Box, Center } from "@chakra-ui/react"
 export { FORM_ERROR } from "final-form"
 
 export interface FormProps<S extends z.ZodType<any, any>>
@@ -37,7 +37,7 @@ export function Form<S extends z.ZodType<any, any>>({
       onSubmit={onSubmit}
       render={({ handleSubmit, submitting, submitError }) => (
         <form onSubmit={handleSubmit} className="form" {...props}>
-          <Box d="flex">
+          <Box color="#4C5270" d="flex" flexDirection={{ base: "column", lg: "row" }}>
             {/* Form fields supplied as children are rendered here */}
             {children}
 
@@ -48,9 +48,17 @@ export function Form<S extends z.ZodType<any, any>>({
             )}
 
             {submitText && (
-              <Button type="submit" disabled={submitting} colorScheme="teal" variant="solid">
-                {submitText}
-              </Button>
+              <Center>
+                <Button
+                  w={{ base: "50%", lg: "100%" }}
+                  type="submit"
+                  disabled={submitting}
+                  bgColor="#BCECE0"
+                  variant="solid"
+                >
+                  {submitText}
+                </Button>
+              </Center>
             )}
           </Box>
         </form>

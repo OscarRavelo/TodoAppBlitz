@@ -1,5 +1,5 @@
 import { Suspense, useState } from "react"
-import { Link, BlitzPage, Routes, useQuery, useMutation } from "blitz"
+import { BlitzPage, useQuery, useMutation, useRouter } from "blitz"
 import Layout from "app/core/layouts/Layout"
 import { useCurrentUser } from "app/core/hooks/useCurrentUser"
 import { DragDropContext } from "react-beautiful-dnd"
@@ -16,6 +16,8 @@ import logout from "app/auth/mutations/logout"
  * You can delete everything in here and start from scratch if you like.
  */
 const UserInfo = () => {
+  const router = useRouter()
+  const cookie = new Cookies()
   const currentUser = useCurrentUser()
   if (currentUser) {
     return (
@@ -26,20 +28,10 @@ const UserInfo = () => {
       </>
     )
   } else {
-    return (
-      <>
-        <Link href={Routes.SignupPage()}>
-          <a className="button small">
-            <strong>Sign Up</strong>
-          </a>
-        </Link>
-        <Link href={Routes.LoginPage()}>
-          <a className="button small">
-            <strong>Login</strong>
-          </a>
-        </Link>
-      </>
-    )
+    cookie.remove("state")
+    router.push("/login")
+
+    return <h1>loading</h1>
   }
 }
 
@@ -72,6 +64,7 @@ const Todo = ({ id }) => {
         })
       )
     } else if (progressTaskIds.find((predicate) => predicate.id === item.id) !== undefined) {
+      console.log("cookie created")
       const filteredArray = progressTaskIds.filter((list) => list.id !== item.id)
       cookie.set(
         "state",
@@ -208,6 +201,7 @@ const Todo = ({ id }) => {
           flexDirection={{ base: "column", lg: "row" }}
         >
           <TodoColumn
+            columnHeader="NOT STARTED"
             cardColor="#36EEE0"
             cardLetter="#4C5270"
             bgaColorColumn="rgba(54,338,224, 0.5)"
@@ -217,6 +211,7 @@ const Todo = ({ id }) => {
             cookie={cookie}
           />
           <TodoColumn
+            columnHeader="IN PROGRESS"
             bgaColorColumn="rgba(188,236,224, 0.5)"
             cardColor="#BCECE0"
             cardLetter="#4C5270"
@@ -227,6 +222,7 @@ const Todo = ({ id }) => {
           />
 
           <TodoColumn
+            columnHeader="COMPLETE"
             cardColor="#F652A0"
             cardLetter="#4C5270"
             bgaColorColumn="rgba(246,82,160,0.5)"
@@ -246,6 +242,8 @@ const Todo = ({ id }) => {
 
 const Home: BlitzPage = () => {
   const [logoutMutation] = useMutation(logout)
+  const deletedCookie = new Cookies()
+  const router = useRouter()
 
   //const [todo] = useQuery(getTodo, {})
 
@@ -280,16 +278,26 @@ const Home: BlitzPage = () => {
           shadow="lg"
         >
           <Flex justifyContent="flex-end" paddingRight="7px" paddingTop="7px">
-            <Button bg="#BCECE0" onClick={async () => logoutMutation()}>
+            <Button
+              bg="#BCECE0"
+              onClick={async () => {
+                deletedCookie.remove("state")
+
+                router.push("/login")
+                logoutMutation()
+              }}
+            >
               Log Out
             </Button>
           </Flex>
           <Box w={{ base: "100%", lg: "20%" }} h={{ base: "0%", lg: "100%" }}>
             <Center h="90%">
               <Image
+                position={{ base: "relative" }}
+                top={{ base: "-2" }}
                 border="3px solid white"
                 borderRadius="full"
-                boxSize={{ base: "70px", lg: "200px" }}
+                boxSize={{ base: "70px", lg: "150px" }}
                 src="https://media.discordapp.net/attachments/461329312943964160/839173207612194886/cat_icon.jpg"
                 alt="Cat Profile"
               />
@@ -302,7 +310,7 @@ const Home: BlitzPage = () => {
             top="20"
             position="absolute"
             w="60%"
-            h="80%"
+            h={{ base: "75%", lg: "80%" }}
             minW="300px"
             borderRadius="lg"
             overflow="hidden"

@@ -3,6 +3,9 @@ import { LabeledTextField } from "app/core/components/LabeledTextField"
 import { Form, FORM_ERROR } from "app/core/components/Form"
 import login from "app/auth/mutations/login"
 import { Login } from "app/auth/validations"
+import { Heading } from "@chakra-ui/layout"
+import React from "react"
+import { Box, Center, Text } from "@chakra-ui/react"
 
 type LoginFormProps = {
   onSuccess?: () => void
@@ -12,9 +15,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const [loginMutation] = useMutation(login)
 
   return (
-    <div>
-      <h1>Login</h1>
-
+    <Box>
       <Form
         submitText="Login"
         schema={Login}
@@ -35,19 +36,29 @@ export const LoginForm = (props: LoginFormProps) => {
           }
         }}
       >
-        <LabeledTextField name="email" label="Email" placeholder="Email" />
-        <LabeledTextField name="password" label="Password" placeholder="Password" type="password" />
-        <div>
-          <Link href={Routes.ForgotPasswordPage()}>
-            <a>Forgot your password?</a>
-          </Link>
-        </div>
+        <Center>
+          <Box w={{ base: "50%", lg: "90%" }}>
+            <Box marginBottom="15px">
+              <LabeledTextField name="email" label="Email" placeholder="Email" />
+            </Box>
+            <Box marginBottom="15px">
+              <LabeledTextField
+                name="password"
+                label="Password"
+                placeholder="Password"
+                type="password"
+              />
+            </Box>
+          </Box>
+        </Center>
       </Form>
 
-      <div style={{ marginTop: "1rem" }}>
-        Or <Link href={Routes.SignupPage()}>Sign Up</Link>
-      </div>
-    </div>
+      <Center>
+        <Heading marginTop="8px" fontSize="1rem" zIndex="9" color="black">
+          <Link href={Routes.SignupPage()}>Sign Up</Link>
+        </Heading>
+      </Center>
+    </Box>
   )
 }
 
